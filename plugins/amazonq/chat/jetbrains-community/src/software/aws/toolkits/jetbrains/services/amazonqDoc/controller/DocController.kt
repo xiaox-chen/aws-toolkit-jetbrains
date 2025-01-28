@@ -5,7 +5,10 @@ package software.aws.toolkits.jetbrains.services.amazonqDoc.controller
 
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.DiffManager
+import com.intellij.diff.chains.SimpleDiffRequestChain
 import com.intellij.diff.contents.EmptyContent
+import com.intellij.diff.editor.ChainDiffVirtualFile
+import com.intellij.diff.editor.DiffEditorTabFilesManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.ide.BrowserUtil
@@ -371,6 +374,7 @@ class DocController(
     }
 
     override suspend fun processOpenDiff(message: IncomingDocMessage.OpenDiff) {
+        this.toolWindow?.activate(null)
         val session = getSessionInfo(message.tabId)
 
         val project = context.project
@@ -398,7 +402,8 @@ class DocController(
                     val request = SimpleDiffRequest(message.filePath, leftDiffContent, rightDiffContent, null, null)
                     request.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true)
 
-                    DiffManager.getInstance().showDiff(project, request)
+                    val newDiff = ChainDiffVirtualFile(SimpleDiffRequestChain(request), message.filePath)
+                    DiffEditorTabFilesManager.getInstance(context.project).showDiffFile(newDiff, true)
                 }
             }
 
